@@ -4051,6 +4051,17 @@ accreal THTensor_(normall)(THTensor *tensor, real value)
   }
 }
 
+accreal THTensor_(logsumexpall)(THTensor *tensor)
+{
+  // Subtract a shift value from the input
+  accreal b = THTensor_(sumall)(tensor);
+  THTensor_(sub_scaled)(tensor, tensor, b, 1);
+
+  THTensor_(exp)(tensor, tensor);
+  accreal summed = THTensor_(sumall)(tensor);
+  return b + TH_MATH_NAME(log)(summed);
+}
+
 void THTensor_(renorm)(THTensor *res, THTensor *src, real value, int dimension, real maxnorm)
 {
   int i;
@@ -4099,6 +4110,34 @@ void THTensor_(renorm)(THTensor *res, THTensor *src, real value, int dimension, 
 
   THTensor_(free)(rowR);
   THTensor_(free)(rowS);
+}
+
+void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim) {
+
+  THArgCheck(dimension >= 0 && dimension < THTensor_(nDimension)(t), 2,
+      "dimension %d out of range", dimension + TH_INDEX_BASE);
+
+  THArgCheck(keepdim == 0 || keepdim == 1, 3,
+      "keepdim value is %d; expected 0 or 1", keepdim);
+
+  // Subtract a shift variable from the input
+  THTensor *b = THTensor_(new)();
+  THTensor_(sum)(b, t, dimension, 1);
+  THTensor_(csub)(r_, t, 1, b);
+
+  THTensor_(exp)(r_, r_);
+  THTensor_(sum)(r_, r_, dimension, 1);
+  THTensor_(log)(r_, r_);
+
+  // Add the shift variable back to the final result
+  THTensor_(cadd)(r_, r_, 1, b);
+
+  THTensor_(free)(b);
+
+  if (!keepdim) {
+    THTensor_(squeeze1d)(r_, r_, dimension);
+  }
+
 }
 
 accreal THTensor_(dist)(THTensor *tensor, THTensor *src, real value)

@@ -187,6 +187,7 @@ TH_API void THTensor_(std)(THTensor *r_, THTensor *t, int dimension, int biased,
 TH_API void THTensor_(var)(THTensor *r_, THTensor *t, int dimension, int biased, int keepdim);
 TH_API void THTensor_(norm)(THTensor *r_, THTensor *t, real value, int dimension, int keepdim);
 TH_API void THTensor_(renorm)(THTensor *r_, THTensor *t, real value, int dimension, real maxnorm);
+TH_API void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim);
 TH_API accreal THTensor_(dist)(THTensor *a, THTensor *b, real value);
 TH_API void THTensor_(histc)(THTensor *hist, THTensor *tensor, int64_t nbins, real minvalue, real maxvalue);
 TH_API void THTensor_(bhistc)(THTensor *hist, THTensor *tensor, int64_t nbins, real minvalue, real maxvalue);
@@ -195,6 +196,7 @@ TH_API accreal THTensor_(meanall)(THTensor *self);
 TH_API accreal THTensor_(varall)(THTensor *self, int biased);
 TH_API accreal THTensor_(stdall)(THTensor *self, int biased);
 TH_API accreal THTensor_(normall)(THTensor *t, real value);
+TH_API accreal THTensor_(logsumexpall)(THTensor *t);
 
 TH_API void THTensor_(linspace)(THTensor *r_, real a, real b, int64_t n);
 TH_API void THTensor_(logspace)(THTensor *r_, real a, real b, int64_t n);

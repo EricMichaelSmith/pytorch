@@ -6191,6 +6191,37 @@ class TestTorch(TestCase):
             lambda: torch.unique(torch.cuda.FloatTensor([0., 1.])),
         )
 
+    def test_logsumexp(self):
+
+        types = {
+            'torch.DoubleTensor': 1e-8,
+            'torch.FloatTensor': 1e-4,
+        }
+        for tname, _prec in types.items():
+            for dim in [0, 1]:
+                for keepdim in [True, False]:
+
+                    raw = torch.randn([10, 10]).type(tname)
+
+                    # Test logsumexp as a method
+                    actual = raw.logsumexp(dim, keepdim)
+                    desired = raw.exp().sum(dim, keepdim).log()
+                    self.assertEqual(desired, actual)
+
+                    # Test logsumexp as a function
+                    actual = torch.logsumexp(raw, dim, keepdim)
+                    desired = torch.log(
+                        torch.sum(
+                            torch.exp(raw), dim, keepdim,
+                        )
+                    )
+                    self.assertEqual(desired, actual)
+
+                    # Test logsumexpall
+                    actual = raw.logsumexp()
+                    desired = raw.exp().sum().log()
+                    self.assertEqual(desired, actual)
+
 
 # Functions to test negative dimension wrapping
 METHOD = 1
