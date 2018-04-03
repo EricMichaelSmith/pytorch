@@ -4120,7 +4120,7 @@ void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim)
   THArgCheck(keepdim == 0 || keepdim == 1, 3,
       "keepdim value is %d; expected 0 or 1", keepdim);
 
-  // Subtract a shift variable from the input
+  // Subtract a (broadcasted) shift variable from the input
   THTensor *b = THTensor_(new)();
   THTensor_(sum)(b, t, dimension, 1);
   THTensor_(csub)(r_, t, 1, b);
