@@ -4122,9 +4122,9 @@ void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim)
 
   // Subtract a (broadcasted) shift variable from the input
   THTensor *b = THTensor_(new)();
-  THTensor *indices_ = THTensor(new)();
+  THLongTensor *indices_ = THLongTensor_new();
   THTensor_(max)(b, indices_, t, dimension, 1);
-  THTensor_(free)(indices_);
+  THLongTensor_free(indices_);
   // We don't actually care about the indices returned by THTensor_(max)
   THTensor_(csub)(r_, t, 1, b);
 
