@@ -4120,12 +4120,26 @@ void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim)
   THArgCheck(keepdim == 0 || keepdim == 1, 3,
       "keepdim value is %d; expected 0 or 1", keepdim);
 
-  // Subtract a (broadcasted) shift variable from the input
+  // Create a shift variable from the input
   THTensor *b = THTensor_(new)();
   THLongTensor *indices_ = THLongTensor_new();
   THTensor_(max)(b, indices_, t, dimension, 1);
   THLongTensor_free(indices_);
-  // We don't actually care about the indices returned by THTensor_(max)
+  // Free indices_ because we don't actually care about the indices returned by
+  // THTensor_(max)
+
+  // Broadcast the shift variable across the dimension that the max was taken over
+  THLongStorage *size = THLongStorage_newWithSize(t->nDimension);
+  THLongStorage *new_stride = THLongStorage_newWithSize(t->nDimension);
+  for(int64_t i = 0; i < t->nDimension; i++) {
+    THLongStorage_set(size, i, THTensor_(size)(t, i));
+  }
+  THLongStorage_set(new_stride, dimension, 0);
+  THTensor_(setStorage)(b, b->storage, b->storageOffset, size, new_stride);
+  THLongStorage_free(size);
+  THLongStorage_free(new_stride);
+
+  // Subtract the shift variable from the input
   THTensor_(csub)(r_, t, 1, b);
 
   THTensor_(exp)(r_, r_);
