@@ -4112,7 +4112,9 @@ void THTensor_(renorm)(THTensor *res, THTensor *src, real value, int dimension, 
   THTensor_(free)(rowS);
 }
 
-void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim) {
+void THTensor_(logsumexp)(THTensor *b, THTensor *t, int dimension, int keepdim) {
+
+  // TODO: switch back to returning r_ and not b!
 
   THArgCheck(dimension >= 0 && dimension < THTensor_(nDimension)(t), 2,
       "dimension %d out of range", dimension + TH_INDEX_BASE);
@@ -4121,39 +4123,51 @@ void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim)
       "keepdim value is %d; expected 0 or 1", keepdim);
 
   // Create a shift variable from the input
-  THTensor *b = THTensor_(new)();
+  // THTensor *b = THTensor_(new)();
+  // TODO: un-comment this previous line
   THLongTensor *indices_ = THLongTensor_new();
   THTensor_(max)(b, indices_, t, dimension, 1);
   THLongTensor_free(indices_);
   // Free indices_ because we don't actually care about the indices returned by
   // THTensor_(max)
 
-  // Broadcast the shift variable across the dimension that the max was taken over
+  // // Broadcast the shift variable across the dimension that the max was taken over
+  // THLongStorage *size = THLongStorage_newWithSize(t->nDimension);
+  // THLongStorage *new_stride = THLongStorage_newWithSize(t->nDimension);
+  // for(int64_t i = 0; i < t->nDimension; i++) {
+  //   THLongStorage_set(size, i, THTensor_(size)(t, i));
+  // }
+  // THLongStorage_set(new_stride, dimension, 0);
+  // THTensor_(setStorage)(b, b->storage, b->storageOffset, size, new_stride);
+  // THLongStorage_free(size);
+  // THLongStorage_free(new_stride);
+
+  // TODO: delete this
   THLongStorage *size = THLongStorage_newWithSize(t->nDimension);
   THLongStorage *new_stride = THLongStorage_newWithSize(t->nDimension);
-  for(int64_t i = 0; i < t->nDimension; i++) {
-    THLongStorage_set(size, i, THTensor_(size)(t, i));
-  }
-  THLongStorage_set(new_stride, dimension, 0);
+  THLongStorage_set(size, dimension, 10);
+  THLongStorage_set(size, dimension, 10);
+  THLongStorage_set(new_stride, dimension, 8);
+  THLongStorage_set(new_stride, dimension, 8);
   THTensor_(setStorage)(b, b->storage, b->storageOffset, size, new_stride);
   THLongStorage_free(size);
   THLongStorage_free(new_stride);
 
-  // Subtract the shift variable from the input
-  THTensor_(csub)(r_, t, 1, b);
+  // // Subtract the shift variable from the input
+  // THTensor_(csub)(r_, t, 1, b);
 
-  THTensor_(exp)(r_, r_);
-  THTensor_(sum)(r_, r_, dimension, 1);
-  THTensor_(log)(r_, r_);
+  // THTensor_(exp)(r_, r_);
+  // THTensor_(sum)(r_, r_, dimension, 1);
+  // THTensor_(log)(r_, r_);
 
-  // Add the shift variable back to the final result
-  THTensor_(cadd)(r_, r_, 1, b);
+  // // Add the shift variable back to the final result
+  // THTensor_(cadd)(r_, r_, 1, b);
+  //
+  // THTensor_(free)(b);
 
-  THTensor_(free)(b);
-
-  if (!keepdim) {
-    THTensor_(squeeze1d)(r_, r_, dimension);
-  }
+  // if (!keepdim) {
+  //   THTensor_(squeeze1d)(r_, r_, dimension);
+  // }
 
 }
 

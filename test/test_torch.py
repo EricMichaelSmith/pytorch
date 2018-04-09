@@ -6206,6 +6206,15 @@ class TestTorch(TestCase):
                     # Test logsumexp as a method
                     actual = raw.logsumexp(dim, keepdim)
                     desired = raw.exp().sum(dim, keepdim).log()
+
+                    # TODO: remove this block!
+                    print('raw:')
+                    print(raw)
+                    print('desired:')
+                    print(desired)
+                    print('actual:')
+                    print(actual)
+
                     self.assertEqual(desired, actual)
 
                     # Test logsumexp as a function
