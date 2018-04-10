@@ -6193,43 +6193,45 @@ class TestTorch(TestCase):
 
     def test_logsumexp(self):
 
-        types = {
+        def testing_each_mode(raw, dim, keepdim, precision):
+
+            # Test logsumexp as a method
+            desired = raw.exp().sum(dim, keepdim).log()
+            actual = raw.logsumexp(dim, keepdim)
+            self.assertEqual(desired, actual, precision)
+
+            # Test logsumexp as a function
+            desired = torch.log(
+                torch.sum(
+                    torch.exp(raw), dim, keepdim,
+                )
+            )
+            actual = torch.logsumexp(raw, dim, keepdim)
+            self.assertEqual(desired, actual, precision)
+
+            # Test logsumexpall
+            desired = raw.exp().sum().log()
+            actual = raw.logsumexp()
+            self.assertEqual(desired, actual, precision)
+
+        types_to_precisions = {
             'torch.DoubleTensor': 1e-8,
             'torch.FloatTensor': 1e-4,
         }
-        for tname, _prec in types.items():
-            for dim in [0, 1]:
-                for keepdim in [True, False]:
 
-                    raw = torch.randn([10, 10]).type(tname)
+        for tname, precision in types_to_precisions.items():
+            for keepdim in [True, False]:
 
-                    # Test logsumexp as a method
-                    actual = raw.logsumexp(dim, keepdim)
-                    desired = raw.exp().sum(dim, keepdim).log()
+                # Test square tensors
+                for num_dims in range(1, 5):
+                    raw = torch.randn([10] * num_dims).type(tname)
+                    for dim in range(num_dims):
+                        testing_each_mode(raw, dim, keepdim, precision)
 
-                    # TODO: remove this block!
-                    print('raw:')
-                    print(raw)
-                    print('desired:')
-                    print(desired)
-                    print('actual:')
-                    print(actual)
-
-                    self.assertEqual(desired, actual)
-
-                    # Test logsumexp as a function
-                    actual = torch.logsumexp(raw, dim, keepdim)
-                    desired = torch.log(
-                        torch.sum(
-                            torch.exp(raw), dim, keepdim,
-                        )
-                    )
-                    self.assertEqual(desired, actual)
-
-                    # Test logsumexpall
-                    actual = raw.logsumexp()
-                    desired = raw.exp().sum().log()
-                    self.assertEqual(desired, actual)
+                # Test non-square tensors
+                raw = torch.randn([5, 2, 8, 1, 3]).type(tname)
+                for dim in range(5):
+                    testing_each_mode(raw, dim, keepdim, precision)
 
 
 # Functions to test negative dimension wrapping
