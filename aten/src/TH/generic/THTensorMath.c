@@ -4131,7 +4131,7 @@ void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim)
   // Free indices_ because we don't actually care about the indices returned by
   // THTensor_(max)
 
-  // Broadcast the shift variable across the dimension that the max was taken
+  // Broadcast the shift tensor across the dimension that the max was taken
   // over
   THLongStorage *size = THLongStorage_newWithSize(b->nDimension);
   THLongStorage *new_stride = THLongStorage_newWithSize(b->nDimension);
@@ -4144,24 +4144,24 @@ void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim)
     }
   }
   THTensor *b_broadcasted = THTensor_(new)();
-
   THTensor_(setStorage)(b_broadcasted, b->storage, b->storageOffset, size,
     new_stride);
   THLongStorage_free(size);
   THLongStorage_free(new_stride);
 
-  // Subtract the (broadcasted) shift variable from the input
+  // Subtract the (broadcasted) shift tensor from the input
   THTensor *shifted = THTensor_(new)();
   THTensor_(csub)(shifted, t, 1, b_broadcasted);
+  THTensor_(free)(b_broadcasted);
 
+  // Calculate the log(sum(exp())) of the shifted tensor
   THTensor_(exp)(shifted, shifted);
   THTensor_(sum)(r_, shifted, dimension, 1);
   THTensor_(free)(shifted);
   THTensor_(log)(r_, r_);
 
-  // Add the shift variable back to the final result
+  // Add the shift tensor back to the final result
   THTensor_(cadd)(r_, r_, 1, b);
-
   THTensor_(free)(b);
 
   if (!keepdim) {
