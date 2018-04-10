@@ -4123,46 +4123,33 @@ void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim)
   THArgCheck(keepdim == 0 || keepdim == 1, 3,
       "keepdim value is %d; expected 0 or 1", keepdim);
 
-  // Create a shift variable from the input
-  THTensor *b = THTensor_(new)();
-  THLongTensor *indices_ = THLongTensor_new();
-  THTensor_(max)(b, indices_, t, dimension, 1);
-  THLongTensor_free(indices_);
-  // Free indices_ because we don't actually care about the indices returned by
-  // THTensor_(max)
-
-  // Broadcast the shift tensor across the dimension that the max was taken
-  // over
-  THLongStorage *size = THLongStorage_newWithSize(b->nDimension);
-  THLongStorage *new_stride = THLongStorage_newWithSize(b->nDimension);
-  for(int64_t i = 0; i < b->nDimension; i++) {
-    THLongStorage_set(size, i, THTensor_(size)(t, i));
+  // Resize the output tensor
+  THLongStorage *size = THLongStorage_newWithSize(t->nDimension);
+  for(int64_t i = 0; i < t->nDimension; i++) {
     if(i == dimension) {
-      THLongStorage_set(new_stride, i, 0);
+      THLongStorage_set(size, i, 1);
     } else {
-      THLongStorage_set(new_stride, i, THTensor_(stride)(b, i));
+      THLongStorage_set(size, i, THTensor_(size)(t, i));
     }
   }
-  THTensor *b_broadcasted = THTensor_(new)();
-  THTensor_(setStorage)(b_broadcasted, b->storage, b->storageOffset, size,
-    new_stride);
-  THLongStorage_free(size);
-  THLongStorage_free(new_stride);
+  THTensor_(resize)(r_, size, NULL);
 
-  // Subtract the (broadcasted) shift tensor from the input
-  THTensor *shifted = THTensor_(new)();
-  THTensor_(csub)(shifted, t, 1, b_broadcasted);
-  THTensor_(free)(b_broadcasted);
+  // Manipulate the values in each strip of the input tensor
+  TH_TENSOR_DIM_APPLY2(real, t, real, r_, dimension,
 
-  // Calculate the log(sum(exp())) of the shifted tensor
-  THTensor_(exp)(shifted, shifted);
-  THTensor_(sum)(r_, shifted, dimension, 1);
-  THTensor_(free)(shifted);
-  THTensor_(log)(r_, r_);
+    // Use the maximum element as a shift variable
+    int64_t max_value = t_data[0];
+    for(int64_t i = 1; i < t_size; i++) {
+      if t_data[i] > max_value:
+        max_value = t_data[i];
+    }
 
-  // Add the shift tensor back to the final result
-  THTensor_(cadd)(r_, r_, 1, b);
-  THTensor_(free)(b);
+    int64_t sum = 0;
+    for(int64_t i = 0; i < t_size; i++) {
+      sum += TH_MATH_NAME(exp)(t_data[i] - max_value);
+    }
+    *r__data = (real)TH_MATH_NAME(log)(sum) + max_value;
+  );
 
   if (!keepdim) {
     THTensor_(squeeze1d)(r_, r_, dimension);
