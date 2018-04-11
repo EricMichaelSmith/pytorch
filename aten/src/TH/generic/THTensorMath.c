@@ -4138,20 +4138,23 @@ void THTensor_(logsumexp)(THTensor *r_, THTensor *t, int dimension, int keepdim)
   TH_TENSOR_DIM_APPLY2(real, t, real, r_, dimension,
 
     // Use the maximum element as a shift variable
-    int64_t max_value = t_data[0];
+    accreal max_value = t_data[0];
     for(int64_t i = 1; i < t_size; i++) {
-      if t_data[i] > max_value:
+      if(t_data[i*t_stride] > max_value) {
         max_value = t_data[i];
+      }
     }
 
-    int64_t sum = 0;
+    // Take the log(sum(exp())) of the elements, after shifting by the shift
+    // variable
+    accreal sum = 0;
     for(int64_t i = 0; i < t_size; i++) {
-      sum += TH_MATH_NAME(exp)(t_data[i] - max_value);
+      sum += TH_MATH_NAME(exp)(t_data[i*t_stride] - max_value);
     }
     *r__data = (real)TH_MATH_NAME(log)(sum) + max_value;
   );
 
-  if (!keepdim) {
+  if(!keepdim) {
     THTensor_(squeeze1d)(r_, r_, dimension);
   }
 
